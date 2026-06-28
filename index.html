@@ -42,11 +42,11 @@
     /* --- 100% SOLID SPLASH SCREEN OVERLAY --- */
     #splashScreen {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: var(--maroon); /* Completely opaque solid color */
+      top: -1%; /* Bleed past the top edge */
+      left: -1%; /* Bleed past the left edge */
+      width: 102vw; /* Slightly wider to prevent sub-pixel gaps */
+      height: 102dvh; /* Slightly taller to hide mobile bar shifts */
+      background: var(--maroon); 
       display: flex;
       justify-content: center;
       align-items: center;
@@ -54,7 +54,8 @@
       color: var(--gold);
       text-align: center;
       padding: 20px;
-      transition: opacity 0.6s ease, pointer-events 0.6s ease;
+      /* Keep your transitions clean */
+      transition: opacity 0.6s ease, visibility 0.6s ease, pointer-events 0.6s ease;
     }
 
     /* 🌟 ZOOM OUT GROUP: Animates everything inside except the typing effect */

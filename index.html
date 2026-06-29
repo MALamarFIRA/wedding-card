@@ -2248,15 +2248,15 @@
       let ticking = false;
     
       function handleTouchStart(e) {
-        // Stop tracking drag interactions if the guest book is scrolled downward
+        // Stop tracking drag interactions if the chat log is scrolled down
         const chatLog = document.getElementById('chatLog');
         if (chatLog && chatLog.scrollTop > 0) return;
         
         startY = e.touches[0].clientY;
         isDragging = true;
         
-        // Completely kill animations/transitions while moving along tracking points
-        chatPanel.style.transition = 'none';
+        // CRITICAL: Kill ALL CSS transitions instantly so it follows your finger in real-time
+        chatPanel.style.setProperty('transition', 'none', 'important');
         chatPanel.classList.add('is-dragging');
       }
     
@@ -2265,20 +2265,24 @@
         currentY = e.touches[0].clientY;
         deltaY = currentY - startY;
     
-        // Only process down-swipes
+        // Allow pulling downward freely
         if (deltaY > 0) {
           if (e.cancelable) e.preventDefault();
           
-          // requestAnimationFrame: Optimizes rendering frame rates to match mobile hardware
           if (!ticking) {
             window.requestAnimationFrame(() => {
               if (isDragging) {
+                // Glues the panel matrix position perfectly to your finger's Y offset
                 chatPanel.style.transform = `translateX(-50%) translateY(${deltaY}px)`;
               }
               ticking = false;
             });
             ticking = true;
           }
+        } else {
+          // If user drags back UP past the starting point, lock it safely at the top view baseline
+          chatPanel.style.transform = 'translateX(-50%) translateY(0px)';
+          deltaY = 0;
         }
       }
     
@@ -2287,35 +2291,35 @@
         isDragging = false;
         chatPanel.classList.remove('is-dragging');
     
-        // Add beautiful, hardware-accelerated spring curves for final releases
-        chatPanel.style.transition = 'transform 0.35s cubic-bezier(0.15, 0.85, 0.45, 1)';
+        // Re-introduce the beautiful spring easing animation ONLY on finger release
+        chatPanel.style.setProperty('transition', 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.125)', 'important');
         
-        const threshold = chatPanel.offsetHeight * 0.22; // Quick, 22% dismiss trigger for great UX
+        const threshold = chatPanel.offsetHeight * 0.3; // Requires a deliberate 30% drag to drop
     
         if (deltaY > threshold) {
-          // Swipe past threshold: Drop down cleanly and safely execute original cleanup actions
+          // Dragged past threshold: Drop down smoothly out of view
           chatPanel.style.transform = 'translateX(-50%) translateY(100%)';
           setTimeout(() => {
             closeAIChat();
             chatPanel.style.transition = '';
             chatPanel.style.transform = '';
-          }, 350);
+          }, 400);
         } else {
-          // Swipe failed threshold: Bounce back elegantly into full visual view matrix
-          chatPanel.style.transform = 'translateX(-50%) translateY(0)';
+          // Dragged below threshold: Spring gracefully back into place!
+          chatPanel.style.transform = 'translateX(-50%) translateY(0px)';
           setTimeout(() => {
             chatPanel.style.transition = '';
             chatPanel.style.transform = '';
-          }, 350);
+          }, 400);
         }
         
-        // Reset structural state flags safely
+        // Reset control variables safely
         startY = 0;
         currentY = 0;
         deltaY = 0;
       }
     
-      // Hook passive listeners for responsive execution tracks
+      // Hook passive listeners for high-speed tracking responsiveness
       if (dragHandle) dragHandle.addEventListener('touchstart', handleTouchStart, { passive: true });
       if (chatPanel) chatPanel.addEventListener('touchstart', handleTouchStart, { passive: true });
       

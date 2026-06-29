@@ -1701,7 +1701,87 @@
     window.addEventListener('touchstart', stopPageAutoScroll);
     window.addEventListener('keydown', stopPageAutoScroll);
 
-    function openRSVP() { document.getElementById('rsvpModal').classList.add('active'); }
+    function openRSVP() {
+      // 🗓️ CONFIGURE YOUR RSVP DEADLINE HERE (Format: YYYY-MM-DD)
+      const RSVP_DUE_DATE = "2025-04-01"; // Updated to your wedding timeline year!
+      
+      const currentDate = new Date();
+      const deadlineDate = new Date(RSVP_DUE_DATE);
+      
+      // If the deadline has passed, trigger our gorgeous custom popup engine
+      if (currentDate > deadlineDate) {
+        showClosedRsvpPopup(RSVP_DUE_DATE);
+        return; // 🛑 Stops the regular RSVP form from popping up
+      }
+
+      // If before deadline, open the form normally
+      document.getElementById('rsvpModal').classList.add('active');
+    }
+
+    // 🌟 GORGEOUS CUSTOM MODAL POPUP ENGINE
+    function showClosedRsvpPopup(deadlineStr) {
+      if (document.getElementById('rsvpClosedModal')) return;
+
+      const overlay = document.createElement('div');
+      overlay.id = 'rsvpClosedModal';
+      overlay.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
+        background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px);
+        display: flex; justify-content: center; align-items: center;
+        z-index: 110000; opacity: 0; transition: opacity 0.4s ease;
+        padding: 20px; box-sizing: border-box;
+      `;
+
+      const formattedDate = new Date(deadlineStr).toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'long', year: 'numeric'
+      });
+
+      const card = document.createElement('div');
+      card.style.cssText = `
+        background: #FFFFFF; width: 100%; max-width: 420px;
+        border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        padding: 35px 25px; text-align: center; position: relative;
+        border: 2px solid var(--gold); transform: translateY(20px);
+        transition: transform 0.4s ease; box-sizing: border-box;
+      `;
+
+      card.innerHTML = `
+        <div style="font-size: 45px; color: var(--maroon); margin-bottom: 15px;">⚠️</div>
+        <h3 style="font-family: serif; font-size: 22px; color: var(--maroon); margin: 0 0 10px 0; letter-spacing: 1px; text-transform: uppercase;">
+          RSVP Period Closed
+        </h3>
+        <p style="font-size: 14px; color: #333333; line-height: 1.6; margin: 0 0 25px 0;">
+          The official deadline to confirm event seating arrangements was <strong>${formattedDate}</strong>. 
+        </p>
+        <div style="font-size: 13px; color: #666666; background: #f9f6f0; border-radius: 8px; padding: 12px; margin-bottom: 25px; line-height: 1.5; font-style: italic;">
+          Kindly reach out directly to Akmal or Musfirah via the Crew Assistant communication channels below to make changes to your attendance registration manually.
+        </div>
+        <button id="closeClosedRsvpBtn" style="
+          background: var(--maroon); color: var(--gold); border: 1px solid var(--gold);
+          padding: 12px 30px; font-size: 13px; font-weight: bold; border-radius: 30px;
+          cursor: pointer; letter-spacing: 1px; text-transform: uppercase;
+          transition: all 0.2s ease; width: 100%; max-width: 180px;
+        ">Acknowledge</button>
+      `;
+
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+
+      setTimeout(() => {
+        overlay.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      }, 10);
+
+      const closePopup = () => {
+        overlay.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => overlay.remove(), 400);
+      };
+
+      document.getElementById('closeClosedRsvpBtn').onclick = closePopup;
+      overlay.onclick = (e) => { if (e.target === overlay) closePopup(); };
+    }
+  
     function closeRSVP() { 
       document.getElementById('rsvpModal').classList.remove('active'); 
       document.getElementById('rsvpForm').reset(); 

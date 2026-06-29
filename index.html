@@ -2302,6 +2302,85 @@
       }, { passive: true });
 
     });
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Track all interactive popups that need swipe-to-close behavior
+      const swipeModals = [
+        { id: 'calendarModal', closeFn: closeCalendarModal },
+        { id: 'contactModal', closeFn: closeContactModal },
+        { id: 'locationModal', closeFn: closeLocationModal }
+      ];
+    
+      swipeModals.forEach(modalConfig => {
+        const backdrop = document.getElementById(modalConfig.id);
+        if (!backdrop) return;
+        
+        const card = backdrop.querySelector('.rsvp-modal');
+        if (!card) return;
+    
+        let startY = 0;
+        let currentY = 0;
+        let isDragging = false;
+    
+        function handleModalTouchStart(e) {
+          // Ensure we don't disrupt internal scrolling inside the modal card if there is any
+          if (card.scrollTop > 0) return;
+          
+          startY = e.touches[0].clientY;
+          isDragging = true;
+          card.style.transition = 'none'; // Terminate CSS transitions while dragging active
+        }
+    
+        function handleModalTouchMove(e) {
+          if (!isDragging) return;
+          currentY = e.touches[0].clientY;
+          const deltaY = currentY - startY;
+    
+          if (deltaY > 0) {
+            e.preventDefault();
+            // Shift card down visually relative to touch tracking depth
+            card.style.transform = `translateY(${deltaY}px)`;
+          }
+        }
+    
+        function handleModalTouchEnd() {
+          if (!isDragging) return;
+          isDragging = false;
+          
+          const deltaY = currentY - startY;
+          const threshold = card.offsetHeight * 0.25; // 25% height requirement to trip trigger
+    
+          card.style.transition = 'transform 0.3s ease'; // Restore clean snapping transition mechanics
+    
+          if (deltaY > threshold) {
+            // Dragged past threshold: slide completely off-screen and execute targeted modal close routine
+            card.style.transform = 'translateY(100%)';
+            setTimeout(() => {
+              modalConfig.closeFn();
+              card.style.transform = ''; // Clean up inline transforms for next open instance
+            }, 300);
+          } else {
+            // Dragged below threshold: snap back into standard view positions comfortably
+            card.style.transform = 'translateY(0)';
+            setTimeout(() => { card.style.transform = ''; }, 300);
+          }
+          
+          startY = 0;
+          currentY = 0;
+        }
+    
+        // Attach listeners directly to both the whole card layer and its dedicated top drag bar handles
+        card.addEventListener('touchstart', handleModalTouchStart, { passive: true });
+        const handleEl = card.querySelector('.modal-drag-handle');
+        if (handleEl) {
+          handleEl.addEventListener('touchstart', handleModalTouchStart, { passive: true });
+        }
+    
+        backdrop.addEventListener('touchmove', handleModalTouchMove, { passive: false });
+        backdrop.addEventListener('touchend', handleModalTouchEnd);
+      });
+    });
   </script>
 </body>
 </html>
